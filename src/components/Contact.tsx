@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Mail, MapPin, Phone, Github, Instagram, Linkedin } from "lucide-react";
+import { Mail, MapPin, Phone, Github, Instagram, Linkedin, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import emailjs from "@emailjs/browser";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -12,11 +13,41 @@ const Contact = () => {
     email: "",
     message: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Message sent successfully!");
-    setFormData({ name: "", email: "", message: "" });
+    setIsSubmitting(true);
+
+    // EmailJS configuration
+    // Replace these with your EmailJS credentials
+    const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || "YOUR_SERVICE_ID";
+    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "YOUR_TEMPLATE_ID";
+    const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "YOUR_PUBLIC_KEY";
+
+    try {
+      await emailjs.send(
+        SERVICE_ID,
+        TEMPLATE_ID,
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          sender_email: formData.email, // Explicitly include sender email for contacts
+          message: formData.message,
+          to_email: "rishichoudhary582@gmail.com", // Your email address
+          reply_to: formData.email, // Enable direct reply to sender
+        },
+        PUBLIC_KEY
+      );
+
+      toast.success("Message sent successfully! I'll get back to you soon.");
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast.error("Failed to send message. Please try again or email me directly.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const contactInfo = [
@@ -142,8 +173,20 @@ const Contact = () => {
                   className="border-border/50"
                 />
               </div>
-              <Button type="submit" size="lg" className="w-full rounded-full">
-                Send Message
+              <Button 
+                type="submit" 
+                size="lg" 
+                className="w-full rounded-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Message"
+                )}
               </Button>
             </form>
           </Card>
